@@ -3,13 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/trackingFragment">
+    app:startDestination="@id/journeyFragment">
 
-    <fragment
-        android:id="@+id/trackingFragment"
-        android:name="com.ishant.bikerush.ui.fragments.TrackingFragment"
-        android:label="fragment_tracking"
-        tools:layout="@layout/fragment_tracking" />
+
     <fragment
         android:id="@+id/statisticsFragment"
         android:name="com.ishant.bikerush.ui.fragments.StatisticsFragment"
@@ -20,4 +16,6 @@
         android:name="com.ishant.bikerush.ui.fragments.JourneyFragment"
         android:label="fragment_journey"
         tools:layout="@layout/fragment_journey" />
+
+
 </navigation>

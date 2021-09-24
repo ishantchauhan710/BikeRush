@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.View
+import com.google.android.gms.maps.GoogleMap
 import com.ishant.bikerush.R
 import com.ishant.bikerush.other.Constants.REQUEST_CODE_LOCATION_PERMISSION
 import com.ishant.bikerush.other.TrackingUtility

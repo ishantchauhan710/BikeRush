@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/journeyFragment"
+        android:title="Journey"
+        android:icon="@drawable/ic_journey" />
+
+    <item
+        android:id="@+id/miPlaceholder"
+        android:title=""/>
+
+
+    <item
+        android:id="@+id/statisticsFragment"
+        android:title="Statistics"
+        android:icon="@drawable/ic_statistics" />
+
+
+</menu>

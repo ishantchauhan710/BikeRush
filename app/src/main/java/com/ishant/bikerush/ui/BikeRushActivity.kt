@@ -12,6 +12,7 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import com.ishant.bikerush.R
 import com.ishant.bikerush.databinding.ActivityBikerushBinding
+import com.ishant.bikerush.other.Constants
 
 class BikeRushActivity : AppCompatActivity() {
 
@@ -21,6 +22,9 @@ class BikeRushActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityBikerushBinding.inflate(LayoutInflater.from(this))
         setContentView(binding.root)
+
+        startTrackingActivityIfNeeded(intent)
+
 
         binding.bottomNavigationView.background = null
         binding.bottomNavigationView.menu.getItem(1).isEnabled = false
@@ -36,8 +40,11 @@ class BikeRushActivity : AppCompatActivity() {
 
     }
 
-    private fun floatToDp(float: Float): Float {
-        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, float, Resources.getSystem().displayMetrics)
+    private fun startTrackingActivityIfNeeded(intent: Intent?) {
+        if(intent?.action== Constants.ACTION_SHOW_TRACKING_ACTIVITY) {
+            val trackingActivityIntent = Intent(this,TrackingActivity::class.java)
+            startActivity(trackingActivityIntent)
+        }
     }
 
 }

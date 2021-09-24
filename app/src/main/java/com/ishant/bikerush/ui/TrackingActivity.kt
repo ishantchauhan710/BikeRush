@@ -1,11 +1,14 @@
 package com.ishant.bikerush.ui
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.LayoutInflater
 import com.google.android.gms.maps.GoogleMap
 import com.ishant.bikerush.R
 import com.ishant.bikerush.databinding.ActivityTrackingBinding
+import com.ishant.bikerush.other.Constants.ACTION_START_OR_RESUME_SERVICE
+import com.ishant.bikerush.services.TrackingService
 
 class TrackingActivity : AppCompatActivity() {
 
@@ -23,6 +26,15 @@ class TrackingActivity : AppCompatActivity() {
         binding.mapView.getMapAsync {
             map = it
         }
+
+        sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
+
+
+    }
+
+    private fun sendCommandToService(action: String) = Intent(this,TrackingService::class.java).also {
+        it.action = action
+        startService(it)
     }
 
     override fun onResume() {

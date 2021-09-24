@@ -11,6 +11,7 @@ import dagger.hilt.android.components.ApplicationComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Singleton
 
+// This file contains all the functions we need as long as our application lives
 @Module
 @InstallIn(ApplicationComponent::class)
 object AppModule {

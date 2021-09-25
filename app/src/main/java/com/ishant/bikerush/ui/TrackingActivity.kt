@@ -19,7 +19,9 @@ import com.ishant.bikerush.other.TrackingUtility
 import com.ishant.bikerush.services.Polyline
 import com.ishant.bikerush.services.Polylines
 import com.ishant.bikerush.services.TrackingService
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class TrackingActivity : AppCompatActivity() {
 
     // View Binding Variable

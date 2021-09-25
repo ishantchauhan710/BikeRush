@@ -13,7 +13,9 @@ import androidx.navigation.ui.setupWithNavController
 import com.ishant.bikerush.R
 import com.ishant.bikerush.databinding.ActivityBikerushBinding
 import com.ishant.bikerush.other.Constants
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class BikeRushActivity : AppCompatActivity() {
 
     // View Binding Variable

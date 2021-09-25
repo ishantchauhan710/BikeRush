@@ -1,6 +1,7 @@
 package com.ishant.bikerush.services
 
 import android.annotation.SuppressLint
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.NotificationManager.IMPORTANCE_LOW
@@ -36,22 +37,22 @@ import com.ishant.bikerush.other.Constants.NOTIFICATION_ID
 import com.ishant.bikerush.other.TrackingUtility
 import com.ishant.bikerush.ui.BikeRushActivity
 import com.ishant.bikerush.ui.TrackingActivity
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import javax.inject.Inject
 
 typealias Polyline = MutableList<LatLng>
 typealias Polylines = MutableList<Polyline>
 
+@AndroidEntryPoint
 class TrackingService : LifecycleService() {
 
     // This variable will help us know when to start and when to pause / resume our service
     var isFirstJourney = true
-
-    // This will provide us the current location of user
-    lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
     // Timer variables
 
@@ -66,6 +67,14 @@ class TrackingService : LifecycleService() {
 
     // This is the total time our journey has been running
     private var timeRun = 0L
+
+    @Inject   // This will provide us the current location of user
+    lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+
+    @Inject
+    lateinit var baseNotificationBuilder: NotificationCompat.Builder
+
+    lateinit var curNotificationBuilder: NotificationCompat.Builder
 
 
     companion object {
@@ -82,10 +91,11 @@ class TrackingService : LifecycleService() {
 
         postInitialValues() // Function to post empty values to our live data. (We created this function at bottom).
 
-        fusedLocationProviderClient = FusedLocationProviderClient(this)
+        curNotificationBuilder = baseNotificationBuilder
 
         isTracking.observe(this, Observer {
             updateLocationTracking(it) // Function to get location of user when tracking is set to true and save it to pathPoints variable. (We created this function at bottom).
+            updateNotificationTrackingState(it)
         })
     }
 
@@ -142,31 +152,50 @@ class TrackingService : LifecycleService() {
             createNotificationChannel(notificationManager) // Notification channel created using the function we created above
         }
 
-        // Building the actual notification that will be displayed
-        val notificationBuilder = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setAutoCancel(false)
-            .setOngoing(true)
-            .setSmallIcon(R.drawable.ic_bike)
-            .setContentTitle("Bike Rush")
-            .setContentText("00:00:00")
-            .setContentIntent(getPendingIntent())
-
         // As our service is starting, we set the isTracking value to true and also start the stopwatch timer
         isTracking.postValue(true)
 
         startTimer() // Function to start the stopwatch. (We created this function).
 
         // Start our service as a foreground service
-        startForeground(NOTIFICATION_ID, notificationBuilder.build())
+        startForeground(NOTIFICATION_ID, baseNotificationBuilder.build())
+
+        timeRunInSeconds.observe(this, Observer {
+            val notification = curNotificationBuilder.setContentText(TrackingUtility.getFormattedStopwatchTime(it))
+            notificationManager.notify(NOTIFICATION_ID,notification.build())
+        })
+
     }
 
-    // This is the activity where our service belongs to
-    private fun getPendingIntent() = PendingIntent.getActivities(
-        this, 0,
-        arrayOf(Intent(this, TrackingActivity::class.java).also {
-            it.action = ACTION_SHOW_TRACKING_ACTIVITY
-        }), FLAG_UPDATE_CURRENT
-    )
+    private fun updateNotificationTrackingState(isTracking: Boolean) {
+
+        val notificationActionText = if(isTracking) "Pause" else "Resume"
+        val pendingIntent = if(isTracking) {
+            val pauseIntent = Intent(this,TrackingService::class.java).apply {
+                action = ACTION_PAUSE_SERVICE
+            }
+            PendingIntent.getService(this,1,pauseIntent, FLAG_UPDATE_CURRENT)
+        } else {
+            val resumeIntent = Intent(this,TrackingService::class.java).apply {
+                action = ACTION_START_OR_RESUME_SERVICE
+            }
+            PendingIntent.getService(this,2,resumeIntent, FLAG_UPDATE_CURRENT)
+        }
+
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        curNotificationBuilder.javaClass.getDeclaredField("mActions").apply {
+            isAccessible = true
+            set(curNotificationBuilder,ArrayList<NotificationCompat.Action>())
+        }
+
+        curNotificationBuilder = baseNotificationBuilder.addAction(R.drawable.ic_bike,notificationActionText,pendingIntent)
+
+        notificationManager.notify(NOTIFICATION_ID,curNotificationBuilder.build())
+
+    }
+
 
     // Function to initialize / post empty valus to our live data members
     private fun postInitialValues() {

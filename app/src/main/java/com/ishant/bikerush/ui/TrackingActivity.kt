@@ -14,6 +14,7 @@ class TrackingActivity : AppCompatActivity() {
 
     lateinit var binding: ActivityTrackingBinding
 
+    // Google Map Instance
     private var map: GoogleMap? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,22 +22,28 @@ class TrackingActivity : AppCompatActivity() {
         binding = ActivityTrackingBinding.inflate(LayoutInflater.from(this))
         setContentView(binding.root)
 
+        // Set up mapView
         binding.mapView.onCreate(savedInstanceState)
 
         binding.mapView.getMapAsync {
-            map = it
+            map = it // Get map asynchronously and assign the result to our map (google map instance) we created on top
         }
 
-        sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
+        binding.btnStartService.setOnClickListener {
+            sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
+        }
 
 
     }
 
+    // This function will start our service and send an action to it
     private fun sendCommandToService(action: String) = Intent(this,TrackingService::class.java).also {
         it.action = action
         startService(it)
     }
 
+
+    // Following are the functions to handle the lifecycle of our map. Removing these functions may cause the app to crash.
     override fun onResume() {
         super.onResume()
         binding.mapView?.onResume()

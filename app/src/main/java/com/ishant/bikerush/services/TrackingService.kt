@@ -68,6 +68,8 @@ class TrackingService : LifecycleService() {
     // This is the total time our journey has been running
     private var timeRun = 0L
 
+    private var serviceKilled = false
+
     @Inject   // This will provide us the current location of user
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
@@ -121,11 +123,21 @@ class TrackingService : LifecycleService() {
                     pauseService() // Function to pause our service. (We created this function at bottom).
                 }
                 ACTION_STOP_SERVICE -> {
+                    killService()
                 }
             }
         }
 
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    private fun killService() {
+        serviceKilled = true
+        isFirstJourney = true
+        pauseService()
+        postInitialValues()
+        stopForeground(true)
+        stopSelf()
     }
 
     // Function to pause our service
@@ -161,8 +173,10 @@ class TrackingService : LifecycleService() {
         startForeground(NOTIFICATION_ID, baseNotificationBuilder.build())
 
         timeRunInSeconds.observe(this, Observer {
-            val notification = curNotificationBuilder.setContentText(TrackingUtility.getFormattedStopwatchTime(it))
-            notificationManager.notify(NOTIFICATION_ID,notification.build())
+            if(!serviceKilled) {
+                val notification = curNotificationBuilder.setContentText(TrackingUtility.getFormattedStopwatchTime(it))
+                notificationManager.notify(NOTIFICATION_ID,notification.build())
+            }
         })
 
     }
@@ -190,9 +204,10 @@ class TrackingService : LifecycleService() {
             set(curNotificationBuilder,ArrayList<NotificationCompat.Action>())
         }
 
-        curNotificationBuilder = baseNotificationBuilder.addAction(R.drawable.ic_bike,notificationActionText,pendingIntent)
-
-        notificationManager.notify(NOTIFICATION_ID,curNotificationBuilder.build())
+        if(!serviceKilled) {
+            curNotificationBuilder = baseNotificationBuilder.addAction(R.drawable.ic_bike,notificationActionText,pendingIntent)
+            notificationManager.notify(NOTIFICATION_ID,curNotificationBuilder.build())
+        }
 
     }
 

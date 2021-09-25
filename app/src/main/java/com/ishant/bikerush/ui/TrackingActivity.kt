@@ -8,10 +8,12 @@ import androidx.lifecycle.Observer
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.PolylineOptions
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ishant.bikerush.R
 import com.ishant.bikerush.databinding.ActivityTrackingBinding
 import com.ishant.bikerush.other.Constants.ACTION_PAUSE_SERVICE
 import com.ishant.bikerush.other.Constants.ACTION_START_OR_RESUME_SERVICE
+import com.ishant.bikerush.other.Constants.ACTION_STOP_SERVICE
 import com.ishant.bikerush.other.Constants.MAP_ZOOM
 import com.ishant.bikerush.other.Constants.POLYLINE_COLOR
 import com.ishant.bikerush.other.Constants.POLYLINE_WIDTH
@@ -56,6 +58,10 @@ class TrackingActivity : AppCompatActivity() {
         binding.btnStartService.setOnClickListener {
             // Start/Resume and Pause our service
             toggleRun()
+        }
+
+        binding.btnEndService.setOnClickListener {
+            showCancelTrackingDialog()
         }
 
     }
@@ -142,6 +148,23 @@ class TrackingActivity : AppCompatActivity() {
             binding.tvTime.text = formattedTime
         })
 
+    }
+
+    private fun showCancelTrackingDialog() {
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle("Cancel the Journey")
+            .setMessage("Are you sure you want to cancel this journey")
+            .setIcon(R.drawable.ic_delete)
+            .setPositiveButton("Yes") { _,_ -> stopJourney() }
+            .setNegativeButton("No") { d,_ -> d.cancel() }
+            .create()
+
+        dialog.show()
+    }
+
+    private fun stopJourney() {
+        sendCommandToService(ACTION_STOP_SERVICE)
+        finish()
     }
 
     // This function will start our service and send an action to it

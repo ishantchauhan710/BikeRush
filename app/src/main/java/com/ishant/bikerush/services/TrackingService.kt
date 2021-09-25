@@ -36,12 +36,16 @@ import com.ishant.bikerush.other.Constants.NOTIFICATION_ID
 import com.ishant.bikerush.other.TrackingUtility
 import com.ishant.bikerush.ui.BikeRushActivity
 import com.ishant.bikerush.ui.TrackingActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 typealias Polyline = MutableList<LatLng>
 typealias Polylines = MutableList<Polyline>
 
-class TrackingService: LifecycleService() {
+class TrackingService : LifecycleService() {
 
     // This variable will help us know when to start and when to pause / resume our service
     var isFirstJourney = true
@@ -49,9 +53,27 @@ class TrackingService: LifecycleService() {
     // This will provide us the current location of user
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
+    // Timer variables
+
+    // Timer enabled or not
+    private var isTimerEnabled = false
+
+    // When our setTimer() function is called, we will store the current time in this variable
+    private var timeStarted = 0L // Time when our service was started
+
+    // This is the time of one single lap that happens when setTimer() is called and paused
+    private var lapTime = 0L
+
+    // This is the total time our journey has been running
+    private var timeRun = 0L
+
+
     companion object {
-        val isTracking = MutableLiveData<Boolean>()
-        val pathPoints = MutableLiveData<Polylines>() // This is the path where user has travelled
+        val isTracking = MutableLiveData<Boolean>() // Whether we want to track our user or not
+        val pathPoints =
+            MutableLiveData<Polylines>() // This is the list of paths or lines where user has travelled
+        val timeRunInSeconds =
+            MutableLiveData<Long>() // Total time elapsed since our service was started or resumed
     }
 
     // This function is called whenever our service is created
@@ -63,7 +85,7 @@ class TrackingService: LifecycleService() {
         fusedLocationProviderClient = FusedLocationProviderClient(this)
 
         isTracking.observe(this, Observer {
-            updateLocationTracking(it) // Function to update location of user when tracking is set to true. (We created this function at bottom).
+            updateLocationTracking(it) // Function to get location of user when tracking is set to true and save it to pathPoints variable. (We created this function at bottom).
         })
     }
 
@@ -71,42 +93,52 @@ class TrackingService: LifecycleService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         intent?.let {
-            when(it.action) {
+            when (it.action) {
                 ACTION_START_OR_RESUME_SERVICE -> {
-                    if(isFirstJourney) {
-                        startForegroundService() // We created this function at bottom
+                    if (isFirstJourney) {
+                        startForegroundService() // Function to start this service. (We created this function at bottom).
                         isFirstJourney = false
+
                         //Toast.makeText(this,"Service Started",Toast.LENGTH_SHORT).show()
                     } else {
-                        startForegroundService()
+                        // When we resume our service, we only want to continue the timer instead of restarting entire service.
+                        startTimer()
+
                         //Toast.makeText(this,"Service Resumed",Toast.LENGTH_SHORT).show()
                     }
                 }
                 ACTION_PAUSE_SERVICE -> {
-                    pauseService()
+                    pauseService() // Function to pause our service. (We created this function at bottom).
                 }
-                ACTION_STOP_SERVICE -> {  }
+                ACTION_STOP_SERVICE -> {
+                }
             }
         }
 
         return super.onStartCommand(intent, flags, startId)
     }
 
+    // Function to pause our service
     private fun pauseService() {
         isTracking.postValue(false)
+        isTimerEnabled = false
     }
 
     // Function to create notification channel to provide metadata to notification
     @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannel(notificationManager: NotificationManager) {
-        val channel = NotificationChannel(NOTIFICATION_CHANNEL_ID,NOTIFICATION_CHANNEL_NAME,IMPORTANCE_LOW)
+        val channel =
+            NotificationChannel(NOTIFICATION_CHANNEL_ID, NOTIFICATION_CHANNEL_NAME, IMPORTANCE_LOW)
         notificationManager.createNotificationChannel(channel)
     }
 
     // Function to start our foreground service
     private fun startForegroundService() {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.O) {
+
+        // Get notification manager service and create notification channel to store notification metadata if android version >= Oreo
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannel(notificationManager) // Notification channel created using the function we created above
         }
 
@@ -119,22 +151,28 @@ class TrackingService: LifecycleService() {
             .setContentText("00:00:00")
             .setContentIntent(getPendingIntent())
 
-        addEmptyPolyline() // A function to add empty polyline when the tracking is paused and then resumed at a different location. (We created this function at bottom).
+        // As our service is starting, we set the isTracking value to true and also start the stopwatch timer
         isTracking.postValue(true)
 
-        startForeground(NOTIFICATION_ID,notificationBuilder.build()) // Start our service as a foreground service
+        startTimer() // Function to start the stopwatch. (We created this function).
+
+        // Start our service as a foreground service
+        startForeground(NOTIFICATION_ID, notificationBuilder.build())
     }
 
     // This is the activity where our service belongs to
-    private fun getPendingIntent() = PendingIntent.getActivities(this,0,
-        arrayOf(Intent(this,TrackingActivity::class.java).also {
+    private fun getPendingIntent() = PendingIntent.getActivities(
+        this, 0,
+        arrayOf(Intent(this, TrackingActivity::class.java).also {
             it.action = ACTION_SHOW_TRACKING_ACTIVITY
-        }),FLAG_UPDATE_CURRENT)
+        }), FLAG_UPDATE_CURRENT
+    )
 
-    // Function to post empty valus to our live data members
+    // Function to initialize / post empty valus to our live data members
     private fun postInitialValues() {
         isTracking.postValue(false)
         pathPoints.postValue(mutableListOf())
+        timeRunInSeconds.postValue(0L)
     }
 
     // Function to add an empty polyline to our data members when there is a pause and resume distance gap between two locations
@@ -146,26 +184,33 @@ class TrackingService: LifecycleService() {
     // Function to add the location points of user
     private fun addPathPoint(location: Location?) {
         location?.let {
-            val pos = LatLng(location.latitude,location.longitude) // Get latitudes and longitudes of user's current location
+            // Get latitudes and longitudes of user's current location
+            val pos = LatLng(location.latitude, location.longitude)
             pathPoints.value?.apply {
-                last().add(pos) // Add the position to end of our pathPoints variable
+                // Add the position to end of our pathPoints variable
+                last().add(pos)
                 pathPoints.postValue(this)
             }
         }
     }
 
     // This callback will be called whenever location of user changes
-    private val locationCallback = object: LocationCallback() {
+    private val locationCallback = object : LocationCallback() {
 
         // When a new location is received
         override fun onLocationResult(result: LocationResult) {
             super.onLocationResult(result)
-            if(isTracking.value!!) {
+            if (isTracking.value!!) {
                 result?.locations?.let { locations ->
-                    for(location in locations) {
-                        addPathPoint(location) // The resulted location will be added to our pathPoints variable
+                    for (location in locations) {
+                        // The resulted location will be added to our pathPoints variable
+                        addPathPoint(location)
                         //Timber.d("Current User Location: ${location.latitude} ${location.longitude}")
-                        Toast.makeText(this@TrackingService,"Current User Location: ${location.latitude} ${location.longitude}",Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this@TrackingService,
+                            "Current User Location: ${location.latitude} ${location.longitude}",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
@@ -174,20 +219,43 @@ class TrackingService: LifecycleService() {
     }
 
     // The Actual Function to get the current location of user
-    @SuppressLint("MissingPermission")
+    @SuppressLint("MissingPermission") // Since we used easy permissions library, we can use @SupressLint to hide this warning
     private fun updateLocationTracking(isTracking: Boolean) {
-        if(isTracking) { // When tracking is set to true
-            if(TrackingUtility.hasLocationPermissions(this)) { // We created this function in TrackingUtility.kt. This function checks for location permissions.
+        if (isTracking) { // When tracking is set to true
+            if (TrackingUtility.hasLocationPermissions(this)) { // This function checks for location permissions. (We created this function in TrackingUtility.kt).
                 val request = LocationRequest().apply { // Location request instance created
                     interval = LOCATION_UPDATE_INTERVAL // Variable defined in Constants.kt
                     fastestInterval = FASTEST_LOCATION_INTERVAL // Variable defined in Constants.kt
                     priority = PRIORITY_HIGH_ACCURACY
                 }
-                fusedLocationProviderClient.requestLocationUpdates(request,locationCallback, Looper.getMainLooper()) // Get the current location of user using the fused location provider client
+                fusedLocationProviderClient.requestLocationUpdates(
+                    request,
+                    locationCallback,
+                    Looper.getMainLooper()
+                ) // Get the current location of user using the fused location provider client
             } else {
                 fusedLocationProviderClient.removeLocationUpdates(locationCallback)
             }
         }
     }
+
+    // Function to start the stopwatch / timer
+    private fun startTimer() {
+        addEmptyPolyline()
+        isTracking.postValue(true)
+        timeStarted = System.currentTimeMillis()
+        isTimerEnabled = true
+        CoroutineScope(Dispatchers.Main).launch {
+            while (isTracking.value!!) {
+                lapTime = System.currentTimeMillis() - timeStarted
+                timeRunInSeconds.postValue((timeRun + lapTime)/1000)
+                delay(1000)
+            }
+            // Add the lap time to total time
+            timeRun += lapTime
+        }
+    }
+
+
 
 }

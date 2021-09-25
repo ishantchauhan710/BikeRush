@@ -82,12 +82,18 @@ class TrackingService: LifecycleService() {
                         //Toast.makeText(this,"Service Resumed",Toast.LENGTH_SHORT).show()
                     }
                 }
-                ACTION_PAUSE_SERVICE -> {  }
+                ACTION_PAUSE_SERVICE -> {
+                    pauseService()
+                }
                 ACTION_STOP_SERVICE -> {  }
             }
         }
 
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    private fun pauseService() {
+        isTracking.postValue(false)
     }
 
     // Function to create notification channel to provide metadata to notification
@@ -159,7 +165,7 @@ class TrackingService: LifecycleService() {
                     for(location in locations) {
                         addPathPoint(location) // The resulted location will be added to our pathPoints variable
                         //Timber.d("Current User Location: ${location.latitude} ${location.longitude}")
-                        //Toast.makeText(this@TrackingService,"Current User Location: ${location.latitude} ${location.longitude}",Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@TrackingService,"Current User Location: ${location.latitude} ${location.longitude}",Toast.LENGTH_SHORT).show()
                     }
                 }
             }

@@ -2,7 +2,10 @@ package com.ishant.bikerush.other
 
 import android.Manifest
 import android.content.Context
+import android.location.Location
 import android.os.Build
+import com.ishant.bikerush.services.Polyline
+import com.ishant.bikerush.services.Polylines
 import pub.devrel.easypermissions.EasyPermissions
 
 object TrackingUtility {
@@ -39,4 +42,27 @@ object TrackingUtility {
                 "${if(seconds < 10) "0" else ""}$seconds"
 
     }
+
+    fun calculatePolylineLength(polyline: Polyline): Float {
+        var distance = 0f
+        for(i in 0..polyline.size-2) {
+            val result = FloatArray(1)
+            val pos1 = polyline[i]
+            val pos2 = polyline[i+1]
+            Location.distanceBetween(pos1.latitude,pos1.longitude,pos2.latitude,pos2.longitude,result)
+            distance += result[0]
+        }
+        return distance
+    }
+
+    fun calculateLengthofPolylines(polylines: Polylines): Float {
+        var totalDistance = 0f
+        for(i in 0..polylines.size-1) {
+            totalDistance += calculatePolylineLength(polylines[i])
+        }
+        return totalDistance
+    }
+
+
+
 }

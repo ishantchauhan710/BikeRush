@@ -16,18 +16,20 @@
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
-        android:layout_height="170dp"
-        android:orientation="horizontal"
+        android:layout_height="0dp"
+        android:layout_marginTop="35dp"
         android:background="@color/mainColor1"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/cardView" />
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardView"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_height="wrap_content"
         app:cardBackgroundColor="@color/mainColor1"
         app:cardCornerRadius="20dp"
         app:contentPadding="20dp"
@@ -107,7 +109,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Distance"
+                        android:text="Avg Speed"
                         android:textColor="@color/white"
                         android:textSize="16sp" />
                 </LinearLayout>
@@ -170,10 +172,10 @@
                     app:layout_constraintStart_toStartOf="parent" />
 
                 <Button
-                    android:id="@+id/btnEndService"
+                    android:id="@+id/btnSaveJourney"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Finish"
+                    android:text="Save"
                     android:backgroundTint="#c0c781"
                     android:textColor="#000000"
                     app:layout_constraintBottom_toBottomOf="parent"

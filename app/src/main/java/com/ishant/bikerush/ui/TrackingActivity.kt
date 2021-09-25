@@ -4,13 +4,17 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.widget.Toast
 import androidx.lifecycle.Observer
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ishant.bikerush.R
 import com.ishant.bikerush.databinding.ActivityTrackingBinding
+import com.ishant.bikerush.db.Journey
 import com.ishant.bikerush.other.Constants.ACTION_PAUSE_SERVICE
 import com.ishant.bikerush.other.Constants.ACTION_START_OR_RESUME_SERVICE
 import com.ishant.bikerush.other.Constants.ACTION_STOP_SERVICE
@@ -22,6 +26,8 @@ import com.ishant.bikerush.services.Polyline
 import com.ishant.bikerush.services.Polylines
 import com.ishant.bikerush.services.TrackingService
 import dagger.hilt.android.AndroidEntryPoint
+import java.lang.Math.round
+import java.util.*
 
 @AndroidEntryPoint
 class TrackingActivity : AppCompatActivity() {
@@ -60,10 +66,52 @@ class TrackingActivity : AppCompatActivity() {
             toggleRun()
         }
 
-        binding.btnEndService.setOnClickListener {
-            showCancelTrackingDialog()
+    }
+
+    override fun onBackPressed() {
+        //super.onBackPressed()
+        showCancelTrackingDialog()
+    }
+
+    private var weight = 60f
+    private var distance = 0f
+
+    private fun zoomToSeeWholeTrack() {
+        val bounds = LatLngBounds.Builder()
+        for(polyline in pathPoints) {
+            for(pos in polyline) {
+                bounds.include(pos)
+            }
         }
 
+        map?.moveCamera(
+            CameraUpdateFactory.newLatLngBounds(
+                bounds.build(),
+                binding.mapView.width,
+                binding.mapView.height,
+                (binding.mapView.height*0.05f).toInt()
+            )
+        )
+
+    }
+
+    private fun endJourneyAndSaveToDb() {
+        map?.snapshot { bmp ->
+            var distance = 0
+            for(polyline in pathPoints) {
+                distance += TrackingUtility.calculatePolylineLength(polyline).toInt()
+            }
+
+            val avgSpeed = round((distance/1000f)/(curTimeInSeconds/3600)*10)/10f
+
+            val curDate = Calendar.getInstance().timeInMillis
+
+            val journey = Journey(curDate,avgSpeed,distance,curTimeInSeconds,bmp)
+
+            stopJourney()
+            Toast.makeText(this,"Journey saved successfully",Toast.LENGTH_SHORT).show()
+            finish()
+        }
     }
 
     // Function to add the last or latest polyline on our map
@@ -139,6 +187,11 @@ class TrackingActivity : AppCompatActivity() {
             pathPoints = it
             addLatestPolyline()
             moveCameraToUser()
+            val distTrack = it
+            distance = TrackingUtility.calculateLengthofPolylines(distTrack)
+            binding.tvDistance.text = "${round((distance/1000f)*10)/10} km"
+
+
         })
 
         // We get the time elapsed since our service was started, convert it to hh:mm:ss using the function we created in TrackingUtility.kt and display in textview as it changes
@@ -146,6 +199,10 @@ class TrackingActivity : AppCompatActivity() {
             curTimeInSeconds = it
             val formattedTime = TrackingUtility.getFormattedStopwatchTime(curTimeInSeconds)
             binding.tvTime.text = formattedTime
+
+            // s=d/t
+             binding.tvSpeed.text = "${round(((distance/curTimeInSeconds)*(3600/1000))*10)/10} kmh"
+
         })
 
     }

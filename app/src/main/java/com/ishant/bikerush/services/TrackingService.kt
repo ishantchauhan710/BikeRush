@@ -250,11 +250,11 @@ class TrackingService : LifecycleService() {
                         // The resulted location will be added to our pathPoints variable
                         addPathPoint(location)
                         //Timber.d("Current User Location: ${location.latitude} ${location.longitude}")
-                        Toast.makeText(
+                        /*Toast.makeText(
                             this@TrackingService,
                             "Current User Location: ${location.latitude} ${location.longitude}",
                             Toast.LENGTH_SHORT
-                        ).show()
+                        ).show()*/
                     }
                 }
             }

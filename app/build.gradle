@@ -102,8 +102,12 @@ dependencies {
     // Timber
     implementation 'com.jakewharton.timber:timber:4.7.1'
 
-    // MPAndroidChart
-    implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+    // Charts
+    implementation 'com.diogobernardino:williamchart:3.10.1'
+
+    // Tooltips
+    implementation 'com.diogobernardino.williamchart:tooltip-slider:3.10.1'
+    implementation 'com.diogobernardino.williamchart:tooltip-points:3.10.1'
 
     implementation 'android.arch.lifecycle:extensions:1.1.1'
 

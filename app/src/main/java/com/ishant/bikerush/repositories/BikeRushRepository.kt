@@ -17,10 +17,6 @@ class BikeRushRepository @Inject constructor(val journeyDao: JourneyDao) {
 
     fun getAllJourneys(orderByCriteria: String) = journeyDao.getAllJourneys(orderByCriteria)
 
-    fun getTotalDuration() = journeyDao.getTotalDuration()
 
-    fun getTotalDistance() = journeyDao.getTotalDistance()
-
-    fun getAvgSpeed() = journeyDao.getAvgSpeed()
 
 }

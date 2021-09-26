@@ -15,16 +15,5 @@ interface JourneyDao {
     @Query("SELECT * FROM journey ORDER BY :orderByCriteria DESC")
     fun getAllJourneys(orderByCriteria: String): LiveData<List<Journey>>
 
-    @Query("SELECT SUM(duration) FROM journey")
-    fun getTotalDuration(): LiveData<Int>
-
-    @Query("SELECT SUM(distance) FROM journey")
-    fun getTotalDistance(): LiveData<Int>
-
-    @Query("SELECT AVG(speed) FROM journey")
-    fun getAvgSpeed(): LiveData<Float>
-
-
-
 
 }

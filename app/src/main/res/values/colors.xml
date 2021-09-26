@@ -12,4 +12,7 @@
     <color name="mainColor2">#FFD740</color>
     <color name="mainColor3">#1F1D2B</color>
 
+    <color name="graphColor">#008cef</color>
+    <color name="graphLabelColor">#6A6A6A</color>
+
 </resources>

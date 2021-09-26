@@ -22,6 +22,7 @@ object ServiceModule {
 
     @ServiceScoped
     @Provides
+    // We need this client to access user location
     fun provideFusedLocationProviderClient(@ApplicationContext context: Context) = FusedLocationProviderClient(context)
 
     @ServiceScoped

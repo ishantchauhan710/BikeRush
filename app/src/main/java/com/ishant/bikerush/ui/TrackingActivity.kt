@@ -4,7 +4,9 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.lifecycle.Observer
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -25,6 +27,7 @@ import com.ishant.bikerush.other.TrackingUtility
 import com.ishant.bikerush.services.Polyline
 import com.ishant.bikerush.services.Polylines
 import com.ishant.bikerush.services.TrackingService
+import com.ishant.bikerush.ui.viewmodels.BikeRushViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import java.lang.Math.round
 import java.util.*
@@ -47,6 +50,14 @@ class TrackingActivity : AppCompatActivity() {
     // Time duration of our service set to 0 initially
     private var curTimeInSeconds = 0L
 
+    // Total distance travelled by user in Km
+    private var distance = 0f
+
+    // Total distance travelled by user in Km/h
+    private var speed = 0f
+
+    val viewModel: BikeRushViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityTrackingBinding.inflate(LayoutInflater.from(this))
@@ -63,19 +74,24 @@ class TrackingActivity : AppCompatActivity() {
 
         binding.btnStartService.setOnClickListener {
             // Start/Resume and Pause our service
-            toggleRun()
+            toggleJourney()
+        }
+
+        binding.btnSaveJourney.setOnClickListener {
+            zoomToSeeWholeTrack()
+            endJourneyAndSaveToDb()
         }
 
     }
 
+    // When back button is pressed, show the dialog box to cancel journey
     override fun onBackPressed() {
         //super.onBackPressed()
         showCancelTrackingDialog()
     }
 
-    private var weight = 60f
-    private var distance = 0f
 
+    // We will use this function to zoom the map such that we see the whole track and take the screenshot of it
     private fun zoomToSeeWholeTrack() {
         val bounds = LatLngBounds.Builder()
         for(polyline in pathPoints) {
@@ -95,21 +111,30 @@ class TrackingActivity : AppCompatActivity() {
 
     }
 
+    // Function to end our journey and save it to database
     private fun endJourneyAndSaveToDb() {
         map?.snapshot { bmp ->
             var distance = 0
             for(polyline in pathPoints) {
-                distance += TrackingUtility.calculatePolylineLength(polyline).toInt()
+                // We created this function to calculate length of polyline in meters and then we convert it to km
+                distance += (TrackingUtility.calculatePolylineLength(polyline).toInt())/1000
             }
 
+            // Avg speed in km/h
             val avgSpeed = round((distance/1000f)/(curTimeInSeconds/3600)*10)/10f
 
+            // Current date and time
             val curDate = Calendar.getInstance().timeInMillis
 
+            // Our journey object to be saved in database
             val journey = Journey(curDate,avgSpeed,distance,curTimeInSeconds,bmp)
 
+            // Save our journey object to database
+            viewModel.insertJourney(journey)
+
+            // We created this function to stop the journey tracking service and end the activity
             stopJourney()
-            Toast.makeText(this,"Journey saved successfully",Toast.LENGTH_SHORT).show()
+            Toast.makeText(applicationContext,"Journey saved successfully",Toast.LENGTH_SHORT).show()
             finish()
         }
     }
@@ -166,7 +191,7 @@ class TrackingActivity : AppCompatActivity() {
     }
 
     // Function to start/resume and pause our service
-    private fun toggleRun() {
+    private fun toggleJourney() {
         if(isTracking) {
             sendCommandToService(ACTION_PAUSE_SERVICE)
         } else {
@@ -189,7 +214,7 @@ class TrackingActivity : AppCompatActivity() {
             moveCameraToUser()
             val distTrack = it
             distance = TrackingUtility.calculateLengthofPolylines(distTrack)
-            binding.tvDistance.text = "${round((distance/1000f)*10)/10} km"
+            binding.tvDistance.text = "${round((distance/1000f)*10)/10} km" // Show distance in km
 
 
         })
@@ -198,15 +223,20 @@ class TrackingActivity : AppCompatActivity() {
         TrackingService.timeRunInSeconds.observe(this, Observer {
             curTimeInSeconds = it
             val formattedTime = TrackingUtility.getFormattedStopwatchTime(curTimeInSeconds)
-            binding.tvTime.text = formattedTime
+            binding.tvTime.text = formattedTime // Show time in hh:mm:ss
 
             // s=d/t
-             binding.tvSpeed.text = "${round(((distance/curTimeInSeconds)*(3600/1000))*10)/10} kmh"
+             binding.tvSpeed.text = "${round(((distance/curTimeInSeconds)*(3600/1000))*10)/10} kmh" // Show speed in km/h
+
+            if(curTimeInSeconds>0L) {
+                binding.btnSaveJourney.visibility = View.VISIBLE
+            }
 
         })
 
     }
 
+    // Function to show the cancel tracking dialog when user presses back button
     private fun showCancelTrackingDialog() {
         val dialog = MaterialAlertDialogBuilder(this)
             .setTitle("Cancel the Journey")
@@ -219,6 +249,7 @@ class TrackingActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    // Function to stop our journey
     private fun stopJourney() {
         sendCommandToService(ACTION_STOP_SERVICE)
         finish()

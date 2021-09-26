@@ -175,6 +175,7 @@
                     android:id="@+id/btnSaveJourney"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:visibility="gone"
                     android:text="Save"
                     android:backgroundTint="#c0c781"
                     android:textColor="#000000"

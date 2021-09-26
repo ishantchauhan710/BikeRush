@@ -68,14 +68,16 @@ class TrackingService : LifecycleService() {
     // This is the total time our journey has been running
     private var timeRun = 0L
 
+    // This variable will tell whether our service was killed or not
     private var serviceKilled = false
 
     @Inject   // This will provide us the current location of user
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
-    @Inject
+    @Inject // This is the base notification that will contain title, time and icon
     lateinit var baseNotificationBuilder: NotificationCompat.Builder
 
+    // This is the current notification that will contain the action text and action to be performed (pause or resume)
     lateinit var curNotificationBuilder: NotificationCompat.Builder
 
 
@@ -93,10 +95,14 @@ class TrackingService : LifecycleService() {
 
         postInitialValues() // Function to post empty values to our live data. (We created this function at bottom).
 
+        // Initially we set curNotificationBuilder to baseNotificationBuilder to avoid lateinit not initialized exception
         curNotificationBuilder = baseNotificationBuilder
 
         isTracking.observe(this, Observer {
-            updateLocationTracking(it) // Function to get location of user when tracking is set to true and save it to pathPoints variable. (We created this function at bottom).
+            // Function to get location of user when tracking is set to true and save it to pathPoints variable. (We created this function at bottom).
+            updateLocationTracking(it)
+
+            // Function to update the notification whenever we are tracking. (We created this function at bottom).
             updateNotificationTrackingState(it)
         })
     }
@@ -108,7 +114,8 @@ class TrackingService : LifecycleService() {
             when (it.action) {
                 ACTION_START_OR_RESUME_SERVICE -> {
                     if (isFirstJourney) {
-                        startForegroundService() // Function to start this service. (We created this function at bottom).
+                        // Function to start this service. (We created this function at bottom).
+                        startForegroundService()
                         isFirstJourney = false
 
                         //Toast.makeText(this,"Service Started",Toast.LENGTH_SHORT).show()
@@ -123,7 +130,7 @@ class TrackingService : LifecycleService() {
                     pauseService() // Function to pause our service. (We created this function at bottom).
                 }
                 ACTION_STOP_SERVICE -> {
-                    killService()
+                    killService() // Function to stop or end our service. (We created this function at bottom).
                 }
             }
         }
@@ -131,6 +138,7 @@ class TrackingService : LifecycleService() {
         return super.onStartCommand(intent, flags, startId)
     }
 
+    // Function to kill our service
     private fun killService() {
         serviceKilled = true
         isFirstJourney = true
@@ -167,11 +175,13 @@ class TrackingService : LifecycleService() {
         // As our service is starting, we set the isTracking value to true and also start the stopwatch timer
         isTracking.postValue(true)
 
-        startTimer() // Function to start the stopwatch. (We created this function).
+        // Function to start the stopwatch. (We created this function).
+        startTimer()
 
         // Start our service as a foreground service
         startForeground(NOTIFICATION_ID, baseNotificationBuilder.build())
 
+        // As time changes and our service is running, we update our notification's content
         timeRunInSeconds.observe(this, Observer {
             if(!serviceKilled) {
                 val notification = curNotificationBuilder.setContentText(TrackingUtility.getFormattedStopwatchTime(it))
@@ -181,9 +191,13 @@ class TrackingService : LifecycleService() {
 
     }
 
+    // Function to update our notification
     private fun updateNotificationTrackingState(isTracking: Boolean) {
 
+        // Set notification action text
         val notificationActionText = if(isTracking) "Pause" else "Resume"
+
+        // Set intent with action according to isTracking variable
         val pendingIntent = if(isTracking) {
             val pauseIntent = Intent(this,TrackingService::class.java).apply {
                 action = ACTION_PAUSE_SERVICE
@@ -199,11 +213,13 @@ class TrackingService : LifecycleService() {
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
+        // This piece of code helps in clearing the previous actions
         curNotificationBuilder.javaClass.getDeclaredField("mActions").apply {
             isAccessible = true
             set(curNotificationBuilder,ArrayList<NotificationCompat.Action>())
         }
 
+        // When our service is running, we notify the notification with the required data
         if(!serviceKilled) {
             curNotificationBuilder = baseNotificationBuilder.addAction(R.drawable.ic_bike,notificationActionText,pendingIntent)
             notificationManager.notify(NOTIFICATION_ID,curNotificationBuilder.build())
@@ -249,6 +265,7 @@ class TrackingService : LifecycleService() {
                     for (location in locations) {
                         // The resulted location will be added to our pathPoints variable
                         addPathPoint(location)
+
                         //Timber.d("Current User Location: ${location.latitude} ${location.longitude}")
                         /*Toast.makeText(
                             this@TrackingService,

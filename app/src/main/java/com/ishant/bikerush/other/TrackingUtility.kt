@@ -43,6 +43,7 @@ object TrackingUtility {
 
     }
 
+    // Function to get length of one polyline
     fun calculatePolylineLength(polyline: Polyline): Float {
         var distance = 0f
         for(i in 0..polyline.size-2) {
@@ -55,6 +56,7 @@ object TrackingUtility {
         return distance
     }
 
+    // Function to calculate sum of length of multiple polylines
     fun calculateLengthofPolylines(polylines: Polylines): Float {
         var totalDistance = 0f
         for(i in 0..polylines.size-1) {

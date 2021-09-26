@@ -10,7 +10,6 @@ import androidx.activity.viewModels
 import androidx.lifecycle.Observer
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -25,7 +24,6 @@ import com.ishant.bikerush.other.Constants.POLYLINE_COLOR
 import com.ishant.bikerush.other.Constants.POLYLINE_WIDTH
 import com.ishant.bikerush.other.TrackingUtility
 import com.ishant.bikerush.services.Polyline
-import com.ishant.bikerush.services.Polylines
 import com.ishant.bikerush.services.TrackingService
 import com.ishant.bikerush.ui.viewmodels.BikeRushViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -53,8 +51,8 @@ class TrackingActivity : AppCompatActivity() {
     // Total distance travelled by user in Km
     private var distance = 0f
 
-    // Total distance travelled by user in Km/h
-    private var speed = 0f
+    // Average speed of user in Km/h
+    private var avgSpeed = 0
 
     val viewModel: BikeRushViewModel by viewModels()
 
@@ -120,14 +118,11 @@ class TrackingActivity : AppCompatActivity() {
                 distance += (TrackingUtility.calculatePolylineLength(polyline).toInt())/1000
             }
 
-            // Avg speed in km/h
-            val avgSpeed = round((distance/1000f)/(curTimeInSeconds/3600)*10)/10f
-
             // Current date and time
             val curDate = Calendar.getInstance().timeInMillis
 
             // Our journey object to be saved in database
-            val journey = Journey(curDate,avgSpeed,distance,curTimeInSeconds,bmp)
+            val journey = Journey(curDate,avgSpeed.toLong(),distance,curTimeInSeconds,bmp)
 
             // Save our journey object to database
             viewModel.insertJourney(journey)
@@ -226,7 +221,8 @@ class TrackingActivity : AppCompatActivity() {
             binding.tvTime.text = formattedTime // Show time in hh:mm:ss
 
             // s=d/t
-             binding.tvSpeed.text = "${round(((distance/curTimeInSeconds)*(3600/1000))*10)/10} kmh" // Show speed in km/h
+            avgSpeed = round(((distance/curTimeInSeconds)*(3600/1000))*10)/10 // Show speed in km/h
+            binding.tvSpeed.text = "$avgSpeed kmh"
 
             if(curTimeInSeconds>0L) {
                 binding.btnSaveJourney.visibility = View.VISIBLE

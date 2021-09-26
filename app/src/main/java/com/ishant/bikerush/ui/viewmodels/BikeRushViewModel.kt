@@ -13,4 +13,6 @@ class BikeRushViewModel @ViewModelInject constructor(val bikeRushRepository: Bik
         bikeRushRepository.upsertJourney(journey)
     }
 
+    val journeyList = bikeRushRepository.getAllJourneys("dateCreated")
+
 }

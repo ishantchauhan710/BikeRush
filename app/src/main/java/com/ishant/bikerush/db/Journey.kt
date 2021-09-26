@@ -8,7 +8,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "journey")
 data class Journey(
     var dateCreated: Long = 0L,
-    var speed: Float = 0f, // In km/h
+    var speed: Long = 0L, // In km/h
     var distance: Int = 0, // In meters
     var duration: Long = 0L, // In milliseconds
     var img: Bitmap ?= null

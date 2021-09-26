@@ -71,7 +71,7 @@
                         android:id="@+id/tvDistance"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="200 m"
+                        android:text="0 Km"
                         android:textColor="@color/white"
                         android:textSize="24sp"
                         android:textStyle="bold" />
@@ -101,7 +101,7 @@
                         android:id="@+id/tvSpeed"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="18 km/h"
+                        android:text="0 Km/h"
                         android:textColor="@color/white"
                         android:textSize="24sp"
                         android:textStyle="bold" />

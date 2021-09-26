@@ -26,6 +26,9 @@ class StatisticsFragment : Fragment(R.layout.fragment_statistics) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentStatisticsBinding.bind(view)
 
+        // Setting chart view visiblity to gone to avoid not initialized exception. Will set it to visible when we have atleast 2 or more journies in our database list
+        binding.lineChart.visibility = View.GONE
+
         // Line chart gradient color
         binding.lineChart.gradientFillColors =
             intArrayOf(
@@ -44,7 +47,10 @@ class StatisticsFragment : Fragment(R.layout.fragment_statistics) {
 
         viewModel.journeyList.observe(viewLifecycleOwner, Observer { journeyList ->
 
-            if (journeyList != null) {
+            if (journeyList != null && journeyList.size>=2) {
+
+                binding.lineChart.visibility = View.VISIBLE
+
                 // Create an empty mutable list of a pair of string and float
                 val lineSet = mutableListOf<Pair<String,Float>>()
 

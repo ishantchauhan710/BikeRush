@@ -13,6 +13,10 @@ class BikeRushViewModel @ViewModelInject constructor(val bikeRushRepository: Bik
         bikeRushRepository.upsertJourney(journey)
     }
 
+    fun deleteJourney(journey: Journey) = viewModelScope.launch {
+        bikeRushRepository.deleteJourney(journey)
+    }
+
     val journeyList = bikeRushRepository.getAllJourneys("dateCreated")
 
 }

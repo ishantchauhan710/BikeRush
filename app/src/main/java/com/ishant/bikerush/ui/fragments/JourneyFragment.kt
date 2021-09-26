@@ -5,13 +5,16 @@ import android.os.Build
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.View
+import android.widget.Toast
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ishant.bikerush.R
 import com.ishant.bikerush.adapters.JourneyAdapter
 import com.ishant.bikerush.databinding.FragmentJourneyBinding
+import com.ishant.bikerush.db.Journey
 import com.ishant.bikerush.other.Constants.REQUEST_CODE_LOCATION_PERMISSION
 import com.ishant.bikerush.other.TrackingUtility
 import com.ishant.bikerush.ui.viewmodels.BikeRushViewModel
@@ -43,7 +46,28 @@ class JourneyFragment : Fragment(R.layout.fragment_journey), EasyPermissions.Per
             adapter.submitList(it)
         })
 
+        adapter.setOnItemClickListener {
+            deleteJourney(it)
+        }
+
     }
+
+    // Function to delete a journey
+    private fun deleteJourney(journey: Journey) {
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Delete")
+            .setMessage("Are you sure you want to delete this journey")
+            .setIcon(R.drawable.ic_delete)
+            .setPositiveButton("Yes") { d,_ ->
+                viewModel.deleteJourney(journey)
+                d.cancel()
+            }
+            .setNegativeButton("No") { d,_ -> d.cancel() }
+            .create()
+
+        dialog.show()
+    }
+
 
     // Function to request location permissions
     private fun requestPermissions() {

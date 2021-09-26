@@ -33,6 +33,12 @@ class JourneyAdapter: RecyclerView.Adapter<JourneyAdapter.JourneyViewHolder>() {
         return JourneyViewHolder(view)
     }
 
+    private var onItemClickListener: ((Journey)->Unit) ?= null
+
+    fun setOnItemClickListener(listener: (Journey)->Unit) {
+            onItemClickListener = listener
+    }
+
     override fun onBindViewHolder(holder: JourneyViewHolder, position: Int) {
         val journey = differ.currentList[position]
         holder.binding.apply {
@@ -44,10 +50,22 @@ class JourneyAdapter: RecyclerView.Adapter<JourneyAdapter.JourneyViewHolder>() {
             tvTime.text = dateFormat.format(journey.dateCreated)
 
             tvDuration.text = TrackingUtility.getFormattedStopwatchTime(journey.duration)
+
+
         }
+
+        holder.binding.root.setOnClickListener {
+            onItemClickListener?.let {
+                it(journey)
+            }
+        }
+
     }
 
     override fun getItemCount(): Int {
         return differ.currentList.size
     }
+
+
+
 }

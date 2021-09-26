@@ -9,6 +9,7 @@ import timber.log.Timber
 class BikeRushApplication: Application() {
     override fun onCreate() {
         super.onCreate()
-        Timber.plant(Timber.DebugTree()) // This function will let us use Timber for Debugging in our app
+        // This function will let us use Timber for Debugging in our app
+        Timber.plant(Timber.DebugTree())
     }
 }

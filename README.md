@@ -105,7 +105,7 @@ This is really simple. All you need to do is:
 2. Create a project for Android SDK and get your Google maps key.
 3. Then in strings.xml, paste the API key in the following format:
 
-<string name="google_maps_key">*Paste your API Key here*</string>
+&lt;string name="google_maps_key"&gt;*Paste your API Key here*&lt;/string&gt;
 
 Once you do this, you are all set to use google maps in your app :)
 
